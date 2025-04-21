@@ -1,0 +1,315 @@
+{
+  "name": "Quick Thought Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "17aa53a4-cb5a-46d1-b018-f18b544c9fa1",
+        "authentication": "basicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "13464367-9a0e-4dc6-a95e-e87c7f9a28b0",
+      "name": "Webhook",
+      "webhookId": "17aa53a4-cb5a-46d1-b018-f18b544c9fa1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "Ov0TJsbNnV07hWIy",
+          "name": "n8n webhook api - basic auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.headers['content-type'] }}",
+                    "rightValue": "multipart/form-data",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "540a7a0a-8c35-41bc-b8e8-66658bdb8ec1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Form Data"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "efb3b788-d2ba-4834-a738-cdb76538382e",
+                    "leftValue": "={{ $json.headers['content-type'] }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JSON"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "1c6d955e-202f-4cdf-8c75-f127a6ea33f6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        440,
+        -160
+      ],
+      "id": "4e992af6-082b-4480-8ff5-ef400e1387c8",
+      "name": "OpenAI-STT",
+      "credentials": {
+        "openAiApi": {
+          "id": "ktQPY5AKUD9mGE5v",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini-2024-07-18",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI-2024-07-18"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "# System prompt\nYou are a thoughtful assistant whose role is to help users capture, summarize, and expand on their ideas in a structured and meaningful way.\n\nPlease follow the detailed instructions below and generate a structured JSON object as the final output.\n\n---\n\n🎯 **Objective**\n\nThe user's input may be spontaneous, fragmented, or unstructured. Your task is to transform that input into a structured idea log entry, enriched with insight and guidance.\n\n---\n\n📦 **Output Format (Strictly JSON)**\n\nReturn only the following JSON structure:\n\n```json\n{\n  \"title\": \"string – a concise title that represents the core idea\",\n  \"mainSummary\": \"string – a short summary (2–3 sentences) explaining the key point\",\n  \"detailedSummary\": \"string – (optional) a longer and more detailed explanation of the idea, including background or specific context if the idea is complex\",\n  \"aiOpinion\": \"string – your suggestions, evaluation, or improvements on the idea\",\n  \"tags\": [\"string\", \"string\", ... up to 5 items – keywords or themes\"],\n  \"suggestedTasks\": [\"string\", ... up to 3 items – optional, actionable next steps\"],\n  \"toolsOrTech\": [\"string\", ... up to 3 items – optional, relevant tools or technologies\"]\n}\n```\n\n---\n\n🔍 **Field Instructions**\n\n- `\"title\"`: A short sentence or phrase (preferably 10–30 characters) capturing the core theme of the idea. Avoid overly vague or generic titles.\n  \n- `\"mainSummary\"`: A concise explanation of the idea's purpose or concept. Aim for 2–3 sentences maximum, describing the essence and context.\n\n- `\"detailedSummary\"` (optional): Use this field to provide a more comprehensive explanation of the idea, especially when the main summary is not sufficient to convey its full context. This may include background information, motivation, specific use cases, or elaborations that clarify or enrich the core concept. Keep the explanation focused and coherent, even if longer.\n\n- `\"aiOpinion\"`: Offer constructive feedback, expansion ideas, potential pitfalls, or questions that help develop the idea further.\n\n- `\"tags\"`: Extract 3–5 relevant keywords that reflect the theme, domain, or topic of the idea. Avoid redundant or overly generic terms.\n\n- `\"suggestedTasks\"` (optional): Recommend 1–3 practical next steps to help the user move forward with the idea.\n\n- `\"toolsOrTech\"` (optional): Suggest specific tools, services, or technologies that are relevant to the idea, and optionally describe their relevance.\n\n---\n\n🌐 **Language Instruction**\n\nAlways respond **in the same language as the user's input**.  \nIf the input is in Korean, respond in Korean.  \nIf the input is in English, respond in English.  \nDo not switch or translate unless explicitly instructed to.\n\n---\n\n🚫 **Important Constraints**\n\n- Only return a JSON object. No markdown, explanations, or extra commentary.\n- Do not include null values – simply omit optional fields if no good suggestion is available.\n- Ensure the JSON is valid and strictly follows the specified structure.\n",
+              "role": "system"
+            },
+            {
+              "content": "=Please summarize and expand on the following user idea according to your assigned role.\n```\n{{ $json.content }}\n```"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1040,
+        -40
+      ],
+      "id": "fd7db97b-2a66-44c1-b0f6-71f46c15a7af",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "ktQPY5AKUD9mGE5v",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"content\": \"{{ $json.content.replace(/\\\\n/g, ' ') }}\"\n}\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        20
+      ],
+      "id": "979cee5b-a550-4760-9577-af65d1899a14",
+      "name": "Edit Fields",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"content\": \"{{ $json.text }}\"\n}\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        -160
+      ],
+      "id": "3fcbf524-88e0-4947-8c4b-4bddb982e151",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        860,
+        -40
+      ],
+      "id": "16b9422a-46fd-4080-8e38-1ba537db4dab",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      content: $json.body.content.replace(/\\n/g, \" \")\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        20
+      ],
+      "id": "3fc99fd1-ab4e-48b0-bd3b-ae8c25b2f443",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "OpenAI-STT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI-STT": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "beb181f4-7f67-4f61-9b12-5ad603ec0983",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "QCtjiqfw09Z9R1sD",
+  "tags": []
+}
