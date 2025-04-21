@@ -1,0 +1,11 @@
+# dotenv
+.env
+
+# OS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# tmp
+tmp/
